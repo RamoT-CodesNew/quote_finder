@@ -8,38 +8,26 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-const conn = await mysql.createPool({
-  host: "127.0.0.1",
-  user: "root",
-  password: "",
-  database: "famous_quotes",
-  port: 3306
-});
+const poolConfig = {
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: Number(process.env.DB_PORT),
+  ssl: { rejectUnauthorized: false }
+};
+
+const conn = await mysql.createPool(poolConfig);
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 app.use(express.static(path.join(__dirname, "public")));
 
-app.get("/dbTest", async (req, res) => {
-  try {
-    let sql = "SELECT CURDATE() AS today";
-    let [rows] = await conn.query(sql);
-    res.send(rows);
-  } catch (err) {
-    console.error(err);
-    res.send({ error: "Database not available" });
-  }
-});
-
 app.get("/", async (req, res) => {
   try {
-    let sqlAuthors = "SELECT authorId, firstName, lastName FROM q_authors ORDER BY lastName";
-    let [authors] = await conn.query(sqlAuthors);
-
-    let sqlCategories = "SELECT DISTINCT category FROM q_quotes ORDER BY category";
-    let [categories] = await conn.query(sqlCategories);
-
+    const [authors] = await conn.query("SELECT authorId, firstName, lastName FROM q_authors ORDER BY lastName");
+    const [categories] = await conn.query("SELECT DISTINCT category FROM q_quotes ORDER BY category");
     res.render("index", { authors, categories });
   } catch (err) {
     console.error(err);
@@ -49,13 +37,11 @@ app.get("/", async (req, res) => {
 
 app.get("/searchByKeyword", async (req, res) => {
   try {
-    let userKeyword = req.query.keyword || "";
-    let sql = `SELECT quote, authorId, firstName, lastName
-               FROM q_quotes
-               NATURAL JOIN q_authors
-               WHERE quote LIKE ?`;
-    let sqlParams = ["%" + userKeyword + "%"];
-    let [rows] = await conn.query(sql, sqlParams);
+    const keyword = req.query.keyword || "";
+    const [rows] = await conn.query(
+      "SELECT quote, authorId, firstName, lastName FROM q_quotes NATURAL JOIN q_authors WHERE quote LIKE ?",
+      [`%${keyword}%`]
+    );
     res.render("results", { quotes: rows });
   } catch (err) {
     console.error(err);
@@ -65,12 +51,11 @@ app.get("/searchByKeyword", async (req, res) => {
 
 app.get("/searchByAuthor", async (req, res) => {
   try {
-    let authorId = req.query.authorId;
-    let sql = `SELECT quote, authorId, firstName, lastName
-               FROM q_quotes
-               NATURAL JOIN q_authors
-               WHERE authorId = ?`;
-    let [rows] = await conn.query(sql, [authorId]);
+    const authorId = req.query.authorId;
+    const [rows] = await conn.query(
+      "SELECT quote, authorId, firstName, lastName FROM q_quotes NATURAL JOIN q_authors WHERE authorId = ?",
+      [authorId]
+    );
     res.render("results", { quotes: rows });
   } catch (err) {
     console.error(err);
@@ -80,12 +65,11 @@ app.get("/searchByAuthor", async (req, res) => {
 
 app.get("/searchByCategory", async (req, res) => {
   try {
-    let category = req.query.category;
-    let sql = `SELECT quote, authorId, firstName, lastName
-               FROM q_quotes
-               NATURAL JOIN q_authors
-               WHERE category = ?`;
-    let [rows] = await conn.query(sql, [category]);
+    const category = req.query.category;
+    const [rows] = await conn.query(
+      "SELECT quote, authorId, firstName, lastName FROM q_quotes NATURAL JOIN q_authors WHERE category = ?",
+      [category]
+    );
     res.render("results", { quotes: rows });
   } catch (err) {
     console.error(err);
@@ -95,13 +79,12 @@ app.get("/searchByCategory", async (req, res) => {
 
 app.get("/searchByLikes", async (req, res) => {
   try {
-    let minLikes = req.query.minLikes || 0;
-    let maxLikes = req.query.maxLikes || 999999;
-    let sql = `SELECT quote, authorId, firstName, lastName
-               FROM q_quotes
-               NATURAL JOIN q_authors
-               WHERE likes BETWEEN ? AND ?`;
-    let [rows] = await conn.query(sql, [minLikes, maxLikes]);
+    const minLikes = Number(req.query.minLikes || 0);
+    const maxLikes = Number(req.query.maxLikes || 999999);
+    const [rows] = await conn.query(
+      "SELECT quote, authorId, firstName, lastName FROM q_quotes NATURAL JOIN q_authors WHERE likes BETWEEN ? AND ?",
+      [minLikes, maxLikes]
+    );
     res.render("results", { quotes: rows });
   } catch (err) {
     console.error(err);
@@ -111,9 +94,7 @@ app.get("/searchByLikes", async (req, res) => {
 
 app.get("/api/author/:id", async (req, res) => {
   try {
-    let authorId = req.params.id;
-    let sql = "SELECT * FROM q_authors WHERE authorId = ?";
-    let [rows] = await conn.query(sql, [authorId]);
+    const [rows] = await conn.query("SELECT * FROM q_authors WHERE authorId = ?", [req.params.id]);
     res.send(rows);
   } catch (err) {
     console.error(err);
@@ -122,7 +103,6 @@ app.get("/api/author/:id", async (req, res) => {
 });
 
 const port = process.env.PORT || 3000;
-
 app.listen(port, () => {
   console.log("Server running on port " + port);
 });
