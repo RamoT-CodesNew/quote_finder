@@ -9,11 +9,13 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 const conn = await mysql.createPool({
-  host: "your_db_host",
-  user: "your_db_user",
-  password: "your_db_password",
-  database: "your_db_name"
+  host: "127.0.0.1",
+  user: "root",
+  password: "",   // empty if you didn’t set one
+  database: "famous_quotes",
+  port: 3306
 });
+
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
