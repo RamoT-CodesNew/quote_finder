@@ -1,0 +1,41 @@
+<%- include("partials/header.ejs") %>
+
+<h1 class="mb-4">Quote Finder</h1>
+
+<form class="mb-3" action="/searchByKeyword">
+  <label class="form-label">Keyword:</label>
+  <input type="text" class="form-control d-inline-block w-auto" name="keyword">
+  <button class="btn btn-primary ms-2">Search by Keyword</button>
+</form>
+
+<form class="mb-3" action="/searchByAuthor">
+  <label class="form-label">Author:</label>
+  <select name="authorId" class="form-select d-inline-block w-auto">
+    <% for (let a of authors) { %>
+      <option value="<%= a.authorId %>">
+        <%= a.firstName %> <%= a.lastName %>
+      </option>
+    <% } %>
+  </select>
+  <button class="btn btn-primary ms-2">Search by Author</button>
+</form>
+
+<form class="mb-3" action="/searchByCategory">
+  <label class="form-label">Category:</label>
+  <select name="category" class="form-select d-inline-block w-auto">
+    <% for (let c of categories) { %>
+      <option value="<%= c.category %>"><%= c.category %></option>
+    <% } %>
+  </select>
+  <button class="btn btn-primary ms-2">Search by Category</button>
+</form>
+
+<form class="mb-3" action="/searchByLikes">
+  <label class="form-label me-2">Likes between:</label>
+  <input type="number" class="form-control d-inline-block w-auto" name="minLikes">
+  <span class="mx-2">and</span>
+  <input type="number" class="form-control d-inline-block w-auto" name="maxLikes">
+  <button class="btn btn-primary ms-2">Search by Likes</button>
+</form>
+
+<%- include("partials/footer.ejs") %>
